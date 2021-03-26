@@ -2,7 +2,7 @@
 This program was created by the
 CodeWizardAVR V3.12 Advanced
 Automatic Program Generator
-© Copyright 1998-2014 Pavel Haiduc, HP InfoTech s.r.l.
+В© Copyright 1998-2014 Pavel Haiduc, HP InfoTech s.r.l.
 http://www.hpinfotech.com
 
 Project : PeakCounter
@@ -20,7 +20,7 @@ Memory model            : Small
 External RAM size       : 0
 Data Stack size         : 256
 *******************************************************/
-#include "config.h" // Все переменные и генерируемые функции
+#include "config.h" // Р’СЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ Рё РіРµРЅРµСЂРёСЂСѓРµРјС‹Рµ С„СѓРЅРєС†РёРё
 
 #define SN 001
 
@@ -31,19 +31,19 @@ Data Stack size         : 256
 #ifdef USE_UART
 char uart_str[100];
 #endif
-char g_bSkipIndicate = 0; // Нужно для индикации (в таймере)
+char g_bSkipIndicate = 0; // РќСѓР¶РЅРѕ РґР»СЏ РёРЅРґРёРєР°С†РёРё (РІ С‚Р°Р№РјРµСЂРµ)
 
 unsigned int g_uiCntBtnShut, g_uiCntBtnStart;
 enum BTN_STAT { btnPressed, btnHolded, btnExtra, btnNull } g_BtnShut, g_BtnStart;
-char g_cStarted;                        // Флаг разрешающий стрельбу
+char g_cStarted;                        // Р¤Р»Р°Рі СЂР°Р·СЂРµС€Р°СЋС‰РёР№ СЃС‚СЂРµР»СЊР±Сѓ
 
-eeprom char eeStartCounter;             // Счетчик циклов
-eeprom char eeInitEEPROM;               // Переменная-признак что нужно инициализировать EEPROM
-eeprom char eeKeyNum[KYENUM_LENGTH];	// Хранение ключа
-eeprom char eeShutLimit;                // Лимит выстрелов
-eeprom int eeShutLength;                // Длина импульса
+eeprom char eeStartCounter;             // РЎС‡РµС‚С‡РёРє С†РёРєР»РѕРІ
+eeprom char eeInitEEPROM;               // РџРµСЂРµРјРµРЅРЅР°СЏ-РїСЂРёР·РЅР°Рє С‡С‚Рѕ РЅСѓР¶РЅРѕ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ EEPROM
+eeprom char eeKeyNum[KYENUM_LENGTH];	// РҐСЂР°РЅРµРЅРёРµ РєР»СЋС‡Р°
+eeprom char eeShutLimit;                // Р›РёРјРёС‚ РІС‹СЃС‚СЂРµР»РѕРІ
+eeprom int eeShutLength;                // Р”Р»РёРЅР° РёРјРїСѓР»СЊСЃР°
 
-char g_cBlinkAllow;	// Включить мигание индикатора
+char g_cBlinkAllow;	// Р’РєР»СЋС‡РёС‚СЊ РјРёРіР°РЅРёРµ РёРЅРґРёРєР°С‚РѕСЂР°
 char blinkcnt = 0;
 
 #ifdef SKIP_REUSE_BAD_KEY
@@ -53,7 +53,7 @@ char prevcard[MAX_DEVICES][9];
 char masterkey[MAX_DEVICES][9];
 char masterkeycnt;
 
-// Таймер индикаторов
+// РўР°Р№РјРµСЂ РёРЅРґРёРєР°С‚РѕСЂРѕРІ
 // Timer 0 overflow interrupt service routine
 interrupt [TIM0_OVF] void timer0_ovf_isr(void)
 {
@@ -66,31 +66,31 @@ interrupt [TIM0_OVF] void timer0_ovf_isr(void)
 interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 {
 	TCNT1 = 0xD8F0;
-	if(BTN_SHUT)   // Нажата кнопка спуска
+	if(BTN_SHUT)   // РќР°Р¶Р°С‚Р° РєРЅРѕРїРєР° СЃРїСѓСЃРєР°
 	{
-		g_uiCntBtnShut++;     // Считаем длительность нажатия
-		if((g_uiCntBtnShut > LONG_PRESS) && (g_uiCntBtnShut < LONG_LONG_PRESS))  // Если долго держим
+		g_uiCntBtnShut++;     // РЎС‡РёС‚Р°РµРј РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ РЅР°Р¶Р°С‚РёСЏ
+		if((g_uiCntBtnShut > LONG_PRESS) && (g_uiCntBtnShut < LONG_LONG_PRESS))  // Р•СЃР»Рё РґРѕР»РіРѕ РґРµСЂР¶РёРј
 		{
-			//g_uiCntBtnShut = LONG_PRESS;   // Дальше не считаем
-			g_BtnShut = btnHolded;         // Статус удержания
+			//g_uiCntBtnShut = LONG_PRESS;   // Р”Р°Р»СЊС€Рµ РЅРµ СЃС‡РёС‚Р°РµРј
+			g_BtnShut = btnHolded;         // РЎС‚Р°С‚СѓСЃ СѓРґРµСЂР¶Р°РЅРёСЏ
 		}
 		else if(g_uiCntBtnShut > LONG_LONG_PRESS)
 		{
-			g_uiCntBtnShut = LONG_LONG_PRESS;   // Дальше не считаем
-			g_BtnShut = btnExtra;         // Статус экстра
+			g_uiCntBtnShut = LONG_LONG_PRESS;   // Р”Р°Р»СЊС€Рµ РЅРµ СЃС‡РёС‚Р°РµРј
+			g_BtnShut = btnExtra;         // РЎС‚Р°С‚СѓСЃ СЌРєСЃС‚СЂР°
 		}
 	}
-	else            // Отпустили кнопку
+	else            // РћС‚РїСѓСЃС‚РёР»Рё РєРЅРѕРїРєСѓ
 	{
-		if((g_uiCntBtnShut > SHORT_PRESS) && (g_uiCntBtnShut < LONG_PRESS))  // Если кнопка нажата и отпущена (не дребезг)
+		if((g_uiCntBtnShut > SHORT_PRESS) && (g_uiCntBtnShut < LONG_PRESS))  // Р•СЃР»Рё РєРЅРѕРїРєР° РЅР°Р¶Р°С‚Р° Рё РѕС‚РїСѓС‰РµРЅР° (РЅРµ РґСЂРµР±РµР·Рі)
 		{
-			g_BtnShut = btnPressed;       // Статус нажата
+			g_BtnShut = btnPressed;       // РЎС‚Р°С‚СѓСЃ РЅР°Р¶Р°С‚Р°
 		}
-		else if(g_BtnShut == btnHolded)   // Если статус УДЕРЖАНИЕ
+		else if(g_BtnShut == btnHolded)   // Р•СЃР»Рё СЃС‚Р°С‚СѓСЃ РЈР”Р•Р Р–РђРќРР•
 		{
-			g_BtnShut = btnNull;          // Сбрасываем статус
+			g_BtnShut = btnNull;          // РЎР±СЂР°СЃС‹РІР°РµРј СЃС‚Р°С‚СѓСЃ
 		}
-		g_uiCntBtnShut = 0;               // Сбрасываем счетчик если кнопка отпущена
+		g_uiCntBtnShut = 0;               // РЎР±СЂР°СЃС‹РІР°РµРј СЃС‡РµС‚С‡РёРє РµСЃР»Рё РєРЅРѕРїРєР° РѕС‚РїСѓС‰РµРЅР°
 	}
 	
 	if(BTN_START)
@@ -115,14 +115,14 @@ interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 		g_uiCntBtnStart = 0;
 	}
 	
-	if(g_cBlinkAllow)                    // Счетчик для мигания цифрой
+	if(g_cBlinkAllow)                    // РЎС‡РµС‚С‡РёРє РґР»СЏ РјРёРіР°РЅРёСЏ С†РёС„СЂРѕР№
 	{
 		if(++blinkcnt > 200) blinkcnt = 0;
 	}else blinkcnt = 150;
 }
 
-int g_Delay;      // Пока в переменной значение больше 0 держим уровень
-// Таймер формирования длительности импулса спуска
+int g_Delay;      // РџРѕРєР° РІ РїРµСЂРµРјРµРЅРЅРѕР№ Р·РЅР°С‡РµРЅРёРµ Р±РѕР»СЊС€Рµ 0 РґРµСЂР¶РёРј СѓСЂРѕРІРµРЅСЊ
+// РўР°Р№РјРµСЂ С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ РґР»РёС‚РµР»СЊРЅРѕСЃС‚Рё РёРјРїСѓР»СЃР° СЃРїСѓСЃРєР°
 // Timer2 overflow interrupt service routine
 interrupt [TIM2_OVF] void timer2_ovf_isr(void)
 {
@@ -131,7 +131,7 @@ interrupt [TIM2_OVF] void timer2_ovf_isr(void)
 	if(g_Delay > 0) {MARKER = 1;g_Delay--;} else MARKER = 0;
 }
 
-// Проверяем ключ
+// РџСЂРѕРІРµСЂСЏРµРј РєР»СЋС‡
 char KeyCheck()
 {
 	char i;
@@ -139,8 +139,8 @@ char KeyCheck()
 	#ifdef SKIP_REUSE_BAD_KEY
 	char skipcard = 0;
 	#endif
-	//return KEY_VALID;    // Если для отладки нужно отключить проверку ключа
-	// Проверка номера
+	//return KEY_VALID;    // Р•СЃР»Рё РґР»СЏ РѕС‚Р»Р°РґРєРё РЅСѓР¶РЅРѕ РѕС‚РєР»СЋС‡РёС‚СЊ РїСЂРѕРІРµСЂРєСѓ РєР»СЋС‡Р°
+	// РџСЂРѕРІРµСЂРєР° РЅРѕРјРµСЂР°
 	masterkeycnt = 0;
 	for(i = 0; i < KYENUM_LENGTH; i++)
 	{
@@ -153,12 +153,12 @@ char KeyCheck()
 			continue;
 		}
 		#ifdef SKIP_REUSE_BAD_KEY
-		if(prevcard[0][i] == rom_code[0][i])      // Проверяем использовался ли этот ключ в предыдущий раз
+		if(prevcard[0][i] == rom_code[0][i])      // РџСЂРѕРІРµСЂСЏРµРј РёСЃРїРѕР»СЊР·РѕРІР°Р»СЃСЏ Р»Рё СЌС‚РѕС‚ РєР»СЋС‡ РІ РїСЂРµРґС‹РґСѓС‰РёР№ СЂР°Р·
 		{
 			skipcard++;                            
 		}
 		#endif
-		if(rom_code[0][i] != eeKeyNum[i]) // Ключ не принят
+		if(rom_code[0][i] != eeKeyNum[i]) // РљР»СЋС‡ РЅРµ РїСЂРёРЅСЏС‚
 		{
 			BEEP_ERR;
 			#ifdef SKIP_REUSE_BAD_KEY
@@ -166,7 +166,7 @@ char KeyCheck()
 			{
 				prevcard[0][i] = rom_code[0][i];
 			}
-			if(skipcard == KYENUM_LENGTH) return 1; // Повторно левый ключ не обрабатываем
+			if(skipcard == KYENUM_LENGTH) return 1; // РџРѕРІС‚РѕСЂРЅРѕ Р»РµРІС‹Р№ РєР»СЋС‡ РЅРµ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј
 			#endif
 			#ifdef USE_UART
 			sprintf(uart_str, "master key count = %i\n\r", masterkeycnt);
@@ -184,25 +184,25 @@ char KeyCheck()
 	return KEY_VALID;
 }
 
-// Пытаемся сохранить ключ в EEPROM
+// РџС‹С‚Р°РµРјСЃСЏ СЃРѕС…СЂР°РЅРёС‚СЊ РєР»СЋС‡ РІ EEPROM
 void TrySaveKey()
 {
 	char i = 0;
 	char timer = 0;
-	while(timer < 10) // с таймаутом 1 сек нажать 15 раз спуск для сохранения ключа
+	while(timer < 10) // СЃ С‚Р°Р№РјР°СѓС‚РѕРј 1 СЃРµРє РЅР°Р¶Р°С‚СЊ 15 СЂР°Р· СЃРїСѓСЃРє РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РєР»СЋС‡Р°
 	{
 		Dyn_Code(DI_null, DI_minus, DI_minus, DI_minus, 0);
 		if(g_BtnShut == btnPressed) // onClick()
 		{
-			ResetBtnShut // сброс состояния кнопки (обработано)
+			ResetBtnShut // СЃР±СЂРѕСЃ СЃРѕСЃС‚РѕСЏРЅРёСЏ РєРЅРѕРїРєРё (РѕР±СЂР°Р±РѕС‚Р°РЅРѕ)
 			timer = 0;
-			if(++i == 15) // считаем количество нажатий
+			if(++i == 15) // СЃС‡РёС‚Р°РµРј РєРѕР»РёС‡РµСЃС‚РІРѕ РЅР°Р¶Р°С‚РёР№
 			{
 				Dyn_Clear(0);
 				
-				if(w1_search(SEARCH_ROM, rom_code) > 0) // Проверяем что ключ приложен
+				if(w1_search(SEARCH_ROM, rom_code) > 0) // РџСЂРѕРІРµСЂСЏРµРј С‡С‚Рѕ РєР»СЋС‡ РїСЂРёР»РѕР¶РµРЅ
 				{
-					for(i = 0; i < KYENUM_LENGTH; i++) // Сохранение ключа
+					for(i = 0; i < KYENUM_LENGTH; i++) // РЎРѕС…СЂР°РЅРµРЅРёРµ РєР»СЋС‡Р°
 					{
 						eeKeyNum[i] = rom_code[0][i];
 					}
@@ -225,34 +225,34 @@ void TrySaveKey()
 	delay_ms(2000);
 }
 
-// Режим установки лимита выстрелов	
+// Р РµР¶РёРј СѓСЃС‚Р°РЅРѕРІРєРё Р»РёРјРёС‚Р° РІС‹СЃС‚СЂРµР»РѕРІ	
 void ModeLimit()
 {
 	unsigned _cnt = 0;
 	char limit = eeShutLimit;
 	ResetBtnShut
 	g_cBlinkAllow = 0;
-	while(++_cnt < 700) // Таймаут бездействия
+	while(++_cnt < 700) // РўР°Р№РјР°СѓС‚ Р±РµР·РґРµР№СЃС‚РІРёСЏ
 	{
-		if(g_BtnShut == btnPressed)   // Медленное увеличение
+		if(g_BtnShut == btnPressed)   // РњРµРґР»РµРЅРЅРѕРµ СѓРІРµР»РёС‡РµРЅРёРµ
 		{
 			limit++;
 			ResetBtnShut
 			_cnt = 0;
 		}
-		else if(g_BtnShut == btnHolded)    // Быстрое увеличение
+		else if(g_BtnShut == btnHolded)    // Р‘С‹СЃС‚СЂРѕРµ СѓРІРµР»РёС‡РµРЅРёРµ
 		{
 			limit++;
 			delay_ms(70);
 			_cnt = 0;
 		}
 		
-		if(limit > 99) limit = 1;        // Количество спусков не больше числа в условии
-		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(limit, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
+		if(limit > 99) limit = 1;        // РљРѕР»РёС‡РµСЃС‚РІРѕ СЃРїСѓСЃРєРѕРІ РЅРµ Р±РѕР»СЊС€Рµ С‡РёСЃР»Р° РІ СѓСЃР»РѕРІРёРё
+		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(limit, 0, 0); else Dyn_Clear(0); // Р•СЃР»Рё СЂР°Р·СЂРµС€РµРЅРѕ, РјРёРіР°РµРј С‡РёСЃР»РѕРј
 		if((_cnt > 200) && (w1_search(SEARCH_ROM, rom_code) > 0)) break;
 		delay_ms(10);
 	}
-	eeShutLimit = limit;      // Сохраняем изменения
+	eeShutLimit = limit;      // РЎРѕС…СЂР°РЅСЏРµРј РёР·РјРµРЅРµРЅРёСЏ
 	#ifdef ALLOW_BLINK
 	g_cBlinkAllow = 1;
 	#endif
@@ -261,30 +261,30 @@ void ModeLimit()
 	delay_ms(1000);
 }	
 
-// Режим установки длины импульса
+// Р РµР¶РёРј СѓСЃС‚Р°РЅРѕРІРєРё РґР»РёРЅС‹ РёРјРїСѓР»СЊСЃР°
 void ModeShutLength()
 {
 	unsigned _cnt = 0;
 	int len = eeShutLength;
 	
 	g_cBlinkAllow = 0;
-	while(++_cnt < 700) // Таймаут бездействия
+	while(++_cnt < 700) // РўР°Р№РјР°СѓС‚ Р±РµР·РґРµР№СЃС‚РІРёСЏ
 	{
-		if(g_BtnShut == btnPressed)   // Медленное увеличение
+		if(g_BtnShut == btnPressed)   // РњРµРґР»РµРЅРЅРѕРµ СѓРІРµР»РёС‡РµРЅРёРµ
 		{
 			len++;
 			ResetBtnShut
 			_cnt = 0;
 		}
-		else if(g_BtnShut == btnHolded)    // Быстрое увеличение
+		else if(g_BtnShut == btnHolded)    // Р‘С‹СЃС‚СЂРѕРµ СѓРІРµР»РёС‡РµРЅРёРµ
 		{
 			len++;
 			delay_ms(70);
 			_cnt = 0;
 		}
 		if(len > 300) len = 50;
-		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(len, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
-		if((_cnt > 200) && (w1_search(SEARCH_ROM, rom_code) > 0)) break;    // Если приложили ключ, выходим. Но не раньше чем через 200 циклов, чтоб не вывалиться при входе
+		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(len, 0, 0); else Dyn_Clear(0); // Р•СЃР»Рё СЂР°Р·СЂРµС€РµРЅРѕ, РјРёРіР°РµРј С‡РёСЃР»РѕРј
+		if((_cnt > 200) && (w1_search(SEARCH_ROM, rom_code) > 0)) break;    // Р•СЃР»Рё РїСЂРёР»РѕР¶РёР»Рё РєР»СЋС‡, РІС‹С…РѕРґРёРј. РќРѕ РЅРµ СЂР°РЅСЊС€Рµ С‡РµРј С‡РµСЂРµР· 200 С†РёРєР»РѕРІ, С‡С‚РѕР± РЅРµ РІС‹РІР°Р»РёС‚СЊСЃСЏ РїСЂРё РІС…РѕРґРµ
 		delay_ms(10);
 	}
 	eeShutLength = len;
@@ -301,11 +301,11 @@ void main(void)
 	char Key;
 	unsigned int uiStartCounter = 0;
 	char cShutLimit;
-	int delay; // временная переменная для вычисления точной задержки
+	int delay; // РІСЂРµРјРµРЅРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ РґР»СЏ РІС‹С‡РёСЃР»РµРЅРёСЏ С‚РѕС‡РЅРѕР№ Р·Р°РґРµСЂР¶РєРё
 	char timer = 0;
 	unsigned int keyTimer;
 	
-	// Номер мастер-ключа
+	// РќРѕРјРµСЂ РјР°СЃС‚РµСЂ-РєР»СЋС‡Р°
 	masterkey[0][0] = 0x01;
 	masterkey[0][1] = 0x82;
 	masterkey[0][2] = 0xDC;
@@ -325,7 +325,7 @@ void main(void)
 	
 	w1_init();
 		
-	Dyn_Code(DI_null, digits[SN/100%10], digits[SN/10%10], digits[SN%10], 0);   // при подаче питания отображаем версию на 500мс
+	Dyn_Code(DI_null, digits[SN/100%10], digits[SN/10%10], digits[SN%10], 0);   // РїСЂРё РїРѕРґР°С‡Рµ РїРёС‚Р°РЅРёСЏ РѕС‚РѕР±СЂР°Р¶Р°РµРј РІРµСЂСЃРёСЋ РЅР° 500РјСЃ
 	delay_ms(500);
 	
 	Dyn_Clear(0);
@@ -340,8 +340,8 @@ void main(void)
 	while(1)
 	{
 		//*************************************************************************************************************************
-		// Приложена метка?
-		// Входим в режим изменения лимита выстрелов
+		// РџСЂРёР»РѕР¶РµРЅР° РјРµС‚РєР°?
+		// Р’С…РѕРґРёРј РІ СЂРµР¶РёРј РёР·РјРµРЅРµРЅРёСЏ Р»РёРјРёС‚Р° РІС‹СЃС‚СЂРµР»РѕРІ
 		if(!g_cStarted && (g_BtnShut != btnHolded) && (w1_search(SEARCH_ROM, rom_code) > 0))
 		{
 			ResetBtnShut
@@ -358,18 +358,18 @@ void main(void)
 			}
 		}
 		//*************************************************************************************************************************
-		// Удержание Старт
-		// Вход в режим сброса счетчика циклов
+		// РЈРґРµСЂР¶Р°РЅРёРµ РЎС‚Р°СЂС‚
+		// Р’С…РѕРґ РІ СЂРµР¶РёРј СЃР±СЂРѕСЃР° СЃС‡РµС‚С‡РёРєР° С†РёРєР»РѕРІ
 		if(!g_cStarted && (g_BtnStart == btnHolded)){
 			ResetBtnShut
 			g_cBlinkAllow = 0;
 			BEEP_OK
 			timer = 0;
 			uiStartCounter = eeStartCounter;
-			while(timer < 100) // 10 секунд на принятие решения
+			while(timer < 100) // 10 СЃРµРєСѓРЅРґ РЅР° РїСЂРёРЅСЏС‚РёРµ СЂРµС€РµРЅРёСЏ
 			{
 				if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(uiStartCounter, 0, 0); else Dyn_Clear(0);
-				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){ // приложен ключ, выполнить сброс счетчика
+				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){ // РїСЂРёР»РѕР¶РµРЅ РєР»СЋС‡, РІС‹РїРѕР»РЅРёС‚СЊ СЃР±СЂРѕСЃ СЃС‡РµС‚С‡РёРєР°
 					eeStartCounter = 0;
 					uiStartCounter = 0;
 					Dyn_Code(DI_null, DI_code_r, DI_code_S, DI_code_t, 0);
@@ -387,12 +387,12 @@ void main(void)
 			delay_ms(1000);
 		}
 		//*************************************************************************************************************************
-		// Долгое удержание спуска + приложена метка
-		// Вход в режим настройки длины импульса
-		if(!g_cStarted && (g_BtnShut == btnExtra)){               // Нужно дождаться когда статус кнопки изменится на удержание
-			Dyn_Code(DI_null, DI_minus, DI_minus, DI_minus, 0);    // Отображаем что готовы принять метку, иначе ввалимся в режим лимита выстрелов (просто по метке)
+		// Р”РѕР»РіРѕРµ СѓРґРµСЂР¶Р°РЅРёРµ СЃРїСѓСЃРєР° + РїСЂРёР»РѕР¶РµРЅР° РјРµС‚РєР°
+		// Р’С…РѕРґ РІ СЂРµР¶РёРј РЅР°СЃС‚СЂРѕР№РєРё РґР»РёРЅС‹ РёРјРїСѓР»СЊСЃР°
+		if(!g_cStarted && (g_BtnShut == btnExtra)){               // РќСѓР¶РЅРѕ РґРѕР¶РґР°С‚СЊСЃСЏ РєРѕРіРґР° СЃС‚Р°С‚СѓСЃ РєРЅРѕРїРєРё РёР·РјРµРЅРёС‚СЃСЏ РЅР° СѓРґРµСЂР¶Р°РЅРёРµ
+			Dyn_Code(DI_null, DI_minus, DI_minus, DI_minus, 0);    // РћС‚РѕР±СЂР°Р¶Р°РµРј С‡С‚Рѕ РіРѕС‚РѕРІС‹ РїСЂРёРЅСЏС‚СЊ РјРµС‚РєСѓ, РёРЅР°С‡Рµ РІРІР°Р»РёРјСЃСЏ РІ СЂРµР¶РёРј Р»РёРјРёС‚Р° РІС‹СЃС‚СЂРµР»РѕРІ (РїСЂРѕСЃС‚Рѕ РїРѕ РјРµС‚РєРµ)
 			keyTimer = 10000;
-			while((g_BtnShut == btnExtra) || (keyTimer > 0)){   // ждем метку пока держим спуск
+			while((g_BtnShut == btnExtra) || (keyTimer > 0)){   // Р¶РґРµРј РјРµС‚РєСѓ РїРѕРєР° РґРµСЂР¶РёРј СЃРїСѓСЃРє
 				if (g_BtnShut != btnExtra) keyTimer--;
 				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){
 					BEEP_OK
@@ -407,26 +407,26 @@ void main(void)
 			}
 		}
 		//*************************************************************************************************************************
-		// Формирование импульса по кнопке спуска
-		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_Delay == 0)){   // Следующий выстрел только если завершен предыдущий (g_Delay == 0)
-			delay = eeShutLength;         // задержку во временную переменную
-			g_Delay = delay * 9.885;      // корректируем счетчик для точности
+		// Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РёРјРїСѓР»СЊСЃР° РїРѕ РєРЅРѕРїРєРµ СЃРїСѓСЃРєР°
+		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_Delay == 0)){   // РЎР»РµРґСѓСЋС‰РёР№ РІС‹СЃС‚СЂРµР» С‚РѕР»СЊРєРѕ РµСЃР»Рё Р·Р°РІРµСЂС€РµРЅ РїСЂРµРґС‹РґСѓС‰РёР№ (g_Delay == 0)
+			delay = eeShutLength;         // Р·Р°РґРµСЂР¶РєСѓ РІРѕ РІСЂРµРјРµРЅРЅСѓСЋ РїРµСЂРµРјРµРЅРЅСѓСЋ
+			g_Delay = delay * 9.885;      // РєРѕСЂСЂРµРєС‚РёСЂСѓРµРј СЃС‡РµС‚С‡РёРє РґР»СЏ С‚РѕС‡РЅРѕСЃС‚Рё
 			
-			if(--cShutLimit == 0){        // Если выполнен последний выстрел, завершаем цикл
+			if(--cShutLimit == 0){        // Р•СЃР»Рё РІС‹РїРѕР»РЅРµРЅ РїРѕСЃР»РµРґРЅРёР№ РІС‹СЃС‚СЂРµР», Р·Р°РІРµСЂС€Р°РµРј С†РёРєР»
 				BEEP_END
 				g_cStarted = 0;
 				#ifdef ALLOW_BLINK
 				g_cBlinkAllow = 1;
 				#endif
 				eeStartCounter++;
-			}else while(g_uiCntBtnShut){       // Пока кнопку не отпустим, дальше не пойдем. Исключение очереди
+			}else while(g_uiCntBtnShut){       // РџРѕРєР° РєРЅРѕРїРєСѓ РЅРµ РѕС‚РїСѓСЃС‚РёРј, РґР°Р»СЊС€Рµ РЅРµ РїРѕР№РґРµРј. РСЃРєР»СЋС‡РµРЅРёРµ РѕС‡РµСЂРµРґРё
 				Dyn_Number(cShutLimit, 0, 0);	
 				delay_ms(10);
 			}
 			ResetBtnShut
 		}
 		//*************************************************************************************************************************
-		// Старт/Стоп
+		// РЎС‚Р°СЂС‚/РЎС‚РѕРї
 		if(g_BtnStart == btnPressed){
 			ResetBtnStart
 			if(g_cStarted) {
@@ -444,7 +444,7 @@ void main(void)
 			}
 		}
 		//*************************************************************************************************************************
-		// Индикация
+		// РРЅРґРёРєР°С†РёСЏ
 		if((blinkcnt > 100) || (g_BtnShut == btnHolded)) Dyn_Number(cShutLimit, 0, 0); else Dyn_Clear(0);
 		//*************************************************************************************************************************
 	}
