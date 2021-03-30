@@ -52,6 +52,7 @@ char prevcard[MAX_DEVICES][9];
 
 char masterkey[MAX_DEVICES][9];
 char masterkeycnt;
+unsigned int ShutInterval = 0;
 
 // Таймер индикаторов
 // Timer 0 overflow interrupt service routine
@@ -69,16 +70,12 @@ interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 	if(BTN_SHUT)   // Нажата кнопка спуска
 	{
 		g_uiCntBtnShut++;     // Считаем длительность нажатия
-		if((g_uiCntBtnShut > LONG_PRESS) && (g_uiCntBtnShut < LONG_LONG_PRESS))  // Если долго держим
+		if(g_uiCntBtnShut > LONG_PRESS)
 		{
-			//g_uiCntBtnShut = LONG_PRESS;   // Дальше не считаем
+			g_uiCntBtnShut = LONG_PRESS;   // Дальше не считаем
 			g_BtnShut = btnHolded;         // Статус удержания
 		}
-		else if(g_uiCntBtnShut > LONG_LONG_PRESS)
-		{
-			g_uiCntBtnShut = LONG_LONG_PRESS;   // Дальше не считаем
-			g_BtnShut = btnExtra;         // Статус экстра
-		}
+		
 	}
 	else            // Отпустили кнопку
 	{
@@ -96,10 +93,15 @@ interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 	if(BTN_START)
 	{
 		g_uiCntBtnStart++;
-		if(g_uiCntBtnStart > LONG_PRESS)
+		if((g_uiCntBtnStart > LONG_PRESS) && (g_uiCntBtnStart <= LONG_LONG_PRESS))
 		{
-			g_uiCntBtnStart = LONG_PRESS;
+			//g_uiCntBtnStart = LONG_PRESS;
 			g_BtnStart = btnHolded;
+		}
+		else if(g_uiCntBtnStart > LONG_LONG_PRESS)
+		{
+			g_uiCntBtnStart = LONG_LONG_PRESS;   // Дальше не считаем
+			g_BtnStart = btnExtra;         // Статус экстра
 		}
 	}
 	else
@@ -108,7 +110,7 @@ interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 		{
 			g_BtnStart = btnPressed;
 		}
-		else if(g_BtnStart == btnHolded)
+		else if((g_BtnStart == btnHolded) || (g_BtnStart == btnExtra))
 		{
 			g_BtnStart = btnNull;
 		}
@@ -128,7 +130,8 @@ interrupt [TIM2_OVF] void timer2_ovf_isr(void)
 {
 	TCNT2=0x38;
 	
-	if(g_Delay > 0) {MARKER = 1;g_Delay--;} else MARKER = 0;
+	if(g_Delay > 0) {MARKER = 1;g_Delay--;if (g_Delay == 0) ShutInterval = SHUT_INTERVAL;} else MARKER = 0;
+	if(ShutInterval > 0) ShutInterval--;
 }
 
 // Проверяем ключ
@@ -192,9 +195,9 @@ void TrySaveKey()
 	while(timer < 10) // с таймаутом 1 сек нажать 15 раз спуск для сохранения ключа
 	{
 		Dyn_Code(DI_null, DI_minus, DI_minus, DI_minus, 0);
-		if(g_BtnShut == btnPressed) // onClick()
+		if(g_BtnStart == btnPressed) // onClick()
 		{
-			ResetBtnShut // сброс состояния кнопки (обработано)
+			ResetBtnStart // сброс состояния кнопки (обработано)
 			timer = 0;
 			if(++i == 15) // считаем количество нажатий
 			{
@@ -230,17 +233,17 @@ void ModeLimit()
 {
 	unsigned _cnt = 0;
 	char limit = eeShutLimit;
-	ResetBtnShut
+	ResetBtnStart
 	g_cBlinkAllow = 0;
 	while(++_cnt < 700) // Таймаут бездействия
 	{
-		if(g_BtnShut == btnPressed)   // Медленное увеличение
+		if(g_BtnStart == btnPressed)   // Медленное увеличение
 		{
 			limit++;
-			ResetBtnShut
+			ResetBtnStart
 			_cnt = 0;
 		}
-		else if(g_BtnShut == btnHolded)    // Быстрое увеличение
+		else if((g_BtnStart == btnHolded) || (g_BtnStart == btnExtra))    // Быстрое увеличение
 		{
 			limit++;
 			delay_ms(70);
@@ -248,7 +251,7 @@ void ModeLimit()
 		}
 		
 		if(limit > 99) limit = 1;        // Количество спусков не больше числа в условии
-		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(limit, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
+		if((blinkcnt > 50) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Number(limit, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
 		if((_cnt > 200) && (w1_search(SEARCH_ROM, rom_code) > 0)) break;
 		delay_ms(10);
 	}
@@ -270,20 +273,20 @@ void ModeShutLength()
 	g_cBlinkAllow = 0;
 	while(++_cnt < 700) // Таймаут бездействия
 	{
-		if(g_BtnShut == btnPressed)   // Медленное увеличение
+		if(g_BtnStart == btnPressed)   // Медленное увеличение
 		{
 			len++;
-			ResetBtnShut
+			ResetBtnStart
 			_cnt = 0;
 		}
-		else if(g_BtnShut == btnHolded)    // Быстрое увеличение
+		else if((g_BtnStart == btnHolded) || (g_BtnStart == btnExtra))    // Быстрое увеличение
 		{
 			len++;
 			delay_ms(70);
 			_cnt = 0;
 		}
 		if(len > 300) len = 50;
-		if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(len, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
+		if((blinkcnt > 50) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Number(len, 0, 0); else Dyn_Clear(0); // Если разрешено, мигаем числом
 		if((_cnt > 200) && (w1_search(SEARCH_ROM, rom_code) > 0)) break;    // Если приложили ключ, выходим. Но не раньше чем через 200 циклов, чтоб не вывалиться при входе
 		delay_ms(10);
 	}
@@ -342,9 +345,9 @@ void main(void)
 		//*************************************************************************************************************************
 		// Приложена метка?
 		// Входим в режим изменения лимита выстрелов
-		if(!g_cStarted && (g_BtnShut != btnHolded) && (w1_search(SEARCH_ROM, rom_code) > 0))
+		if(!g_cStarted && (g_BtnStart != btnHolded) && (w1_search(SEARCH_ROM, rom_code) > 0))
 		{
-			ResetBtnShut
+			ResetBtnStart
 			Key = KeyCheck();
 			if(Key == KEY_VALID){
 				BEEP_OK
@@ -361,14 +364,13 @@ void main(void)
 		// Удержание Старт
 		// Вход в режим сброса счетчика циклов
 		if(!g_cStarted && (g_BtnStart == btnHolded)){
-			ResetBtnShut
 			g_cBlinkAllow = 0;
 			BEEP_OK
 			timer = 0;
 			uiStartCounter = eeStartCounter;
-			while(timer < 100) // 10 секунд на принятие решения
+			while((timer < 100) && (g_BtnStart != btnExtra)) // 10 секунд на принятие решения
 			{
-				if((blinkcnt > 50) || (g_BtnShut == btnHolded)) Dyn_Number(uiStartCounter, 0, 0); else Dyn_Clear(0);
+				if((blinkcnt > 50) || (g_BtnStart == btnHolded)) Dyn_Number(uiStartCounter, 0, 0); else Dyn_Clear(0);
 				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){ // приложен ключ, выполнить сброс счетчика
 					eeStartCounter = 0;
 					uiStartCounter = 0;
@@ -379,24 +381,26 @@ void main(void)
 				timer++;
 				delay_ms(100);
 			}
-			#ifdef ALLOW_BLINK
-			g_cBlinkAllow = 1;
-			#endif
-			ResetBtnShut
-			ResetBtnStart
-			delay_ms(1000);
+			if (g_BtnStart == btnHolded) {
+				#ifdef ALLOW_BLINK
+				g_cBlinkAllow = 1;
+				#endif
+				ResetBtnShut
+				ResetBtnStart
+				delay_ms(1000);
+			}
 		}
 		//*************************************************************************************************************************
 		// Долгое удержание спуска + приложена метка
 		// Вход в режим настройки длины импульса
-		if(!g_cStarted && (g_BtnShut == btnExtra)){               // Нужно дождаться когда статус кнопки изменится на удержание
+		if(!g_cStarted && (g_BtnStart == btnExtra)){               // Нужно дождаться когда статус кнопки изменится на удержание
 			Dyn_Code(DI_null, DI_minus, DI_minus, DI_minus, 0);    // Отображаем что готовы принять метку, иначе ввалимся в режим лимита выстрелов (просто по метке)
 			keyTimer = 10000;
-			while((g_BtnShut == btnExtra) || (keyTimer > 0)){   // ждем метку пока держим спуск
-				if (g_BtnShut != btnExtra) keyTimer--;
+			while((g_BtnStart == btnExtra) || (keyTimer > 0)){   // ждем метку пока держим спуск
+				if (g_BtnStart != btnExtra) keyTimer--;
 				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){
 					BEEP_OK
-					ResetBtnShut
+					ResetBtnStart
 					Dyn_Number(eeShutLength, 0, 0);
 					delay_ms(1000);
 					ModeShutLength();
@@ -408,7 +412,7 @@ void main(void)
 		}
 		//*************************************************************************************************************************
 		// Формирование импульса по кнопке спуска
-		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_Delay == 0)){   // Следующий выстрел только если завершен предыдущий (g_Delay == 0)
+		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_Delay == 0) && (ShutInterval == 0)){   // Следующий выстрел только если завершен предыдущий (g_Delay == 0)
 			delay = eeShutLength;         // задержку во временную переменную
 			g_Delay = delay * 9.885;      // корректируем счетчик для точности
 			
@@ -424,6 +428,7 @@ void main(void)
 				delay_ms(10);
 			}
 			ResetBtnShut
+			ResetBtnStart
 		}
 		//*************************************************************************************************************************
 		// Старт/Стоп
@@ -441,11 +446,12 @@ void main(void)
 				cShutLimit = eeShutLimit;
 				BEEP_OK
 				ResetBtnShut
+				ResetBtnStart
 			}
 		}
 		//*************************************************************************************************************************
 		// Индикация
-		if((blinkcnt > 100) || (g_BtnShut == btnHolded)) Dyn_Number(cShutLimit, 0, 0); else Dyn_Clear(0);
+		if((blinkcnt > 100) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Number(cShutLimit, 0, 0); else Dyn_Clear(0);
 		//*************************************************************************************************************************
 	}
 }

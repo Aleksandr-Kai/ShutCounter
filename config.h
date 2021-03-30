@@ -19,6 +19,9 @@
 #define LONG_PRESS	300
 #define LONG_LONG_PRESS	1000
 
+// x * 0.1 s
+#define SHUT_INTERVAL	20000
+
 #define ResetBtnShut	g_BtnShut = btnNull;g_uiCntBtnShut = 0;
 #define ResetBtnStart	g_BtnStart = btnNull;g_uiCntBtnStart = 0;
 
