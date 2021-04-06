@@ -45,6 +45,8 @@ eeprom int eeShutLength;                // Длина импульса
 
 char g_cBlinkAllow;	// Включить мигание индикатора
 char blinkcnt = 0;
+char blinkDot = 0;
+char dot = 0;
 
 #ifdef SKIP_REUSE_BAD_KEY
 char prevcard[MAX_DEVICES][9];
@@ -121,6 +123,18 @@ interrupt[TIM1_OVF] void timer1_ovf_isr(void)
 	{
 		if(++blinkcnt > 200) blinkcnt = 0;
 	}else blinkcnt = 150;
+	
+	if(g_cStarted)                    // Счетчик для мигания цифрой
+	{
+		if(++blinkDot > 200)
+		{
+			dot = 0;
+			blinkDot = 0;
+		}else if (blinkDot > 100)
+		{
+			dot = 1;
+		}
+	}else {blinkDot = 0;dot = 0;}
 }
 
 int g_Delay;      // Пока в переменной значение больше 0 держим уровень
@@ -234,7 +248,9 @@ void ModeLimit()
 	unsigned _cnt = 0;
 	char limit = eeShutLimit;
 	ResetBtnStart
-	g_cBlinkAllow = 0;
+	#ifdef ALLOW_BLINK
+	g_cBlinkAllow = 1;
+	#endif
 	while(++_cnt < 700) // Таймаут бездействия
 	{
 		if(g_BtnStart == btnPressed)   // Медленное увеличение
@@ -257,7 +273,7 @@ void ModeLimit()
 	}
 	eeShutLimit = limit;      // Сохраняем изменения
 	#ifdef ALLOW_BLINK
-	g_cBlinkAllow = 1;
+	g_cBlinkAllow = 0;
 	#endif
 	BEEP_OK;
 	Dyn_Code(DI_null, DI_code_S, DI_code_E, DI_code_t, 0);   // SEt
@@ -270,7 +286,9 @@ void ModeShutLength()
 	unsigned _cnt = 0;
 	int len = eeShutLength;
 	
-	g_cBlinkAllow = 0;
+	#ifdef ALLOW_BLINK
+	g_cBlinkAllow = 1;
+	#endif
 	while(++_cnt < 700) // Таймаут бездействия
 	{
 		if(g_BtnStart == btnPressed)   // Медленное увеличение
@@ -292,7 +310,7 @@ void ModeShutLength()
 	}
 	eeShutLength = len;
 	#ifdef ALLOW_BLINK
-	g_cBlinkAllow = 1;
+	g_cBlinkAllow = 0;
 	#endif
 	BEEP_OK;
 	Dyn_Code(DI_null, DI_code_S, DI_code_E, DI_code_t, 0);   // SEt
@@ -337,7 +355,7 @@ void main(void)
 	ResetBtnShut
 	ResetBtnStart
 	#ifdef ALLOW_BLINK
-	g_cBlinkAllow = 1;
+	g_cBlinkAllow = 0;
 	#endif
 	
 	while(1)
@@ -364,7 +382,9 @@ void main(void)
 		// Удержание Старт
 		// Вход в режим сброса счетчика циклов
 		if(!g_cStarted && (g_BtnStart == btnHolded)){
-			g_cBlinkAllow = 0;
+			#ifdef ALLOW_BLINK
+			g_cBlinkAllow = 1;
+			#endif
 			BEEP_OK
 			timer = 0;
 			uiStartCounter = eeStartCounter;
@@ -374,16 +394,21 @@ void main(void)
 				if((w1_search(SEARCH_ROM, rom_code) > 0) && (KeyCheck() == KEY_VALID)){ // приложен ключ, выполнить сброс счетчика
 					eeStartCounter = 0;
 					uiStartCounter = 0;
+					
+					#ifdef ALLOW_BLINK
+					if((blinkcnt > 100) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Code(DI_null, DI_code_r, DI_code_S, DI_code_t, 0); else Dyn_Clear(0);
+					#else
 					Dyn_Code(DI_null, DI_code_r, DI_code_S, DI_code_t, 0);
+					#endif
 					break;
 				}
 				
 				timer++;
 				delay_ms(100);
 			}
-			if (g_BtnStart == btnHolded) {
+			if (g_BtnStart != btnExtra) {
 				#ifdef ALLOW_BLINK
-				g_cBlinkAllow = 1;
+				g_cBlinkAllow = 0;
 				#endif
 				ResetBtnShut
 				ResetBtnStart
@@ -412,7 +437,9 @@ void main(void)
 		}
 		//*************************************************************************************************************************
 		// Формирование импульса по кнопке спуска
-		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_Delay == 0) && (ShutInterval == 0)){   // Следующий выстрел только если завершен предыдущий (g_Delay == 0)
+		if(g_cStarted && (g_uiCntBtnShut > 0) && (g_BtnShut != btnHolded) && (g_Delay == 0) && (ShutInterval == 0)){   // Следующий выстрел только если завершен предыдущий (g_Delay == 0)
+			g_BtnShut = btnHolded;
+			g_uiCntBtnShut = LONG_PRESS;
 			delay = eeShutLength;         // задержку во временную переменную
 			g_Delay = delay * 9.885;      // корректируем счетчик для точности
 			
@@ -423,24 +450,24 @@ void main(void)
 				g_cBlinkAllow = 1;
 				#endif
 				eeStartCounter++;
-			}else while(g_uiCntBtnShut){       // Пока кнопку не отпустим, дальше не пойдем. Исключение очереди
+			}/*else while(g_uiCntBtnShut){       // Пока кнопку не отпустим, дальше не пойдем. Исключение очереди
 				Dyn_Number(cShutLimit, 0, 0);	
 				delay_ms(10);
-			}
-			ResetBtnShut
+			}*/
+			//ResetBtnShut
 			ResetBtnStart
 		}
 		//*************************************************************************************************************************
 		// Старт/Стоп
-		if(g_BtnStart == btnPressed){
+		if(!g_cStarted && (g_BtnStart == btnPressed)){
 			ResetBtnStart
-			if(g_cStarted) {
+			/*if(g_cStarted) {
 				g_cStarted = 0; 
 				cShutLimit = 0;
 				#ifdef ALLOW_BLINK
 				g_cBlinkAllow = 1;
 				#endif
-			}else {
+			}else */{
 				g_cBlinkAllow = 0;
 				g_cStarted = 1;
 				cShutLimit = eeShutLimit;
@@ -451,7 +478,8 @@ void main(void)
 		}
 		//*************************************************************************************************************************
 		// Индикация
-		if((blinkcnt > 100) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Number(cShutLimit, 0, 0); else Dyn_Clear(0);
+		//if((blinkcnt > 100) || (g_BtnStart == btnHolded) || (g_BtnStart == btnExtra)) Dyn_Number(cShutLimit, 0, 0); else Dyn_Clear(0);
+		Dyn_Number(cShutLimit, dot, 0);
 		//*************************************************************************************************************************
 	}
 }
